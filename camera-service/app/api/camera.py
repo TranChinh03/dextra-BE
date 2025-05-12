@@ -31,11 +31,7 @@ async def list_cameras(
     db=Depends(get_db)
 ):
     cameras = await db_manager.get_camera_list(db, is_enabled, search)
-    return {
-        "code": 200,
-        "message": "OK",
-        "data": {"cameras": cameras}
-    }
+    return cameras
 
 # @cameras.get("/demo-cameras", response_model=List[Camera])
 # async def list_demo_cameras(
@@ -84,13 +80,7 @@ async def read_camera(camera_id: str, db=Depends(get_db)):
     camera = await db_manager.get_camera_by_id(db, camera_id)
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    return {
-        "code": 200,
-        "message": "OK",
-        "data": {
-            "camera": camera
-        }
-    }
+    return camera
 
 
 @cameras.put("/cameras/status")
