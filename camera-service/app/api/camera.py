@@ -9,6 +9,8 @@ from databases import Database
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, From, To, TemplateId, Substitution
 from sqlalchemy import select
+import httpx
+from fastapi.responses import StreamingResponse
 
 cameras = APIRouter()
 @cameras.get("/all-api-cameras-information", response_model=List[Camera])
@@ -81,6 +83,18 @@ async def read_camera(camera_id: str, db=Depends(get_db)):
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
     return camera
+
+@cameras.get("/cameras/image/{camera_id}")
+async def read_camera_image(camera_id: str, db=Depends(get_db)):
+    camera = await db_manager.get_camera_by_id(db, camera_id)
+    if not camera or not camera.liveviewUrl:
+        raise HTTPException(status_code=404, detail="Camera not found or liveviewUrl missing")
+    async with httpx.AsyncClient() as client:   
+        response = await client.get(camera.liveviewUrl, headers={"User-Agent": "Mozilla/5.0"}, follow_redirects=True)
+        if response.status_code != 200:
+            raise HTTPException(status_code=502, detail="Failed to fetch image from camera")
+        content_type = response.headers.get("content-type", "image/jpeg")
+        return StreamingResponse(response.aiter_bytes(), media_type=content_type)
 
 
 @cameras.put("/cameras/status")
