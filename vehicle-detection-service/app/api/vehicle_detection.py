@@ -8,7 +8,7 @@ from .models import Detection, DetectionResponse
 
 detections = APIRouter()
 
-model = YOLO("yolov8n.pt", task='detect')  # Load the YOLOv8 model
+model = YOLO("bestv10l.pt", task='detect')  # Load the YOLOv8 model
 vehicle_classes = ['bicycle', 'motorcycle', 'car', 'van', 'truck', 'bus', 'fire truck', 'container']
 
 @detections.post("/detect-vehicles", response_model=DetectionResponse)
