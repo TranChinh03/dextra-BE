@@ -89,6 +89,12 @@ async def get_camera_by_id(db: Database, camera_id: str) -> dict:
     result = await db.fetch_one(query)
     return result
 
+async def get_camera_by_name(db: Database, camera_name: str) -> dict:
+    print(f"Searching for camera with name: {camera_name}")
+    query = select(cameras).where(cameras.c.name.ilike(f"%{camera_name}%")) 
+    result = await db.fetch_all(query)
+    return result
+
 async def get_demo_cameras(db: Database) -> List[Camera]:
     query = select([demoCameras])
     return await db.fetch_all(query)

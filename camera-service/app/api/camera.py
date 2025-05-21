@@ -84,6 +84,11 @@ async def read_camera(camera_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=404, detail="Camera not found")
     return camera
 
+@cameras.get("/cameras/detection/classes")
+async def get_vehicles():
+    vehicles = ['bicycle', 'motorcycle', 'car', 'van', 'truck', 'bus', 'fire truck', 'container']
+    return vehicles
+
 @cameras.get("/cameras/image/{camera_id}")
 async def read_camera_image(camera_id: str, db=Depends(get_db)):
     camera = await db_manager.get_camera_by_id(db, camera_id)
@@ -96,6 +101,12 @@ async def read_camera_image(camera_id: str, db=Depends(get_db)):
         content_type = response.headers.get("content-type", "image/jpeg")
         return StreamingResponse(response.aiter_bytes(), media_type=content_type)
 
+@cameras.put("/cameras/search/{camera_name}")
+async def search_camera_by_name(camera_name: str, db=Depends(get_db)):
+    cameras = await db_manager.get_camera_by_name(db, camera_name)
+    if not cameras:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    return cameras
 
 @cameras.put("/cameras/status")
 async def modify_multiple_camera_status(
