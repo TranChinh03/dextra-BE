@@ -89,6 +89,13 @@ async def get_vehicles():
     vehicles = ['bicycle', 'motorcycle', 'car', 'van', 'truck', 'bus', 'fire truck', 'container']
     return vehicles
 
+@cameras.get("/cameras/district/classes")
+async def get_vehicles(db=Depends(get_db)):
+    districts = await db_manager.get_districts(db)
+    if not districts:
+        raise HTTPException(status_code=404, detail="No districts found")
+    return districts
+
 @cameras.get("/cameras/image/{camera_id}")
 async def read_camera_image(camera_id: str, db=Depends(get_db)):
     camera = await db_manager.get_camera_by_id(db, camera_id)
@@ -100,6 +107,13 @@ async def read_camera_image(camera_id: str, db=Depends(get_db)):
             raise HTTPException(status_code=502, detail="Failed to fetch image from camera")
         content_type = response.headers.get("content-type", "image/jpeg")
         return StreamingResponse(response.aiter_bytes(), media_type=content_type)
+    
+@cameras.get("/cameras/district/{district}")
+async def get_cameras_by_district(district: str, db=Depends(get_db)):
+    cameras = await db_manager.get_cameras_by_district(db, district)
+    if not cameras:
+        raise HTTPException(status_code=404, detail="No cameras found in this district")
+    return cameras
 
 @cameras.put("/cameras/search/{camera_name}")
 async def search_camera_by_name(camera_name: str, db=Depends(get_db)):

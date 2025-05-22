@@ -49,6 +49,11 @@ async def get_all_cameras() -> List[Camera]:
             print(e)
     return camera_list
 
+async def get_districts(db: Database) -> List[str]:
+    query = select(cameras.c.dist).distinct()
+    result = await db.fetch_all(query)
+    return [row[0] for row in result]
+
 async def delete_all_cameras(db: Database) -> str:
     stmt = delete(cameras)
     await db.execute(stmt)
@@ -92,6 +97,11 @@ async def get_camera_by_id(db: Database, camera_id: str) -> dict:
 async def get_camera_by_name(db: Database, camera_name: str) -> dict:
     print(f"Searching for camera with name: {camera_name}")
     query = select(cameras).where(cameras.c.name.ilike(f"%{camera_name}%")) 
+    result = await db.fetch_all(query)
+    return result[:3]
+
+async def get_cameras_by_district(db: Database, district: str) -> List[dict]:
+    query = select(cameras).where(cameras.c.dist == district)
     result = await db.fetch_all(query)
     return result
 
