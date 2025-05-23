@@ -115,7 +115,7 @@ async def get_cameras_by_district(district: str, db=Depends(get_db)):
         raise HTTPException(status_code=404, detail="No cameras found in this district")
     return cameras
 
-@cameras.put("/cameras/search/{camera_name}")
+@cameras.get("/cameras/search/{camera_name}")
 async def search_camera_by_name(camera_name: str, db=Depends(get_db)):
     cameras = await db_manager.get_camera_by_name(db, camera_name)
     if not cameras:
