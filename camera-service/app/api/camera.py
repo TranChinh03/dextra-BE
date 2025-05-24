@@ -11,6 +11,7 @@ from sendgrid.helpers.mail import Mail, From, To, TemplateId, Substitution
 from sqlalchemy import select
 import httpx
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 cameras = APIRouter()
 @cameras.get("/all-api-cameras-information", response_model=List[Camera])
@@ -115,9 +116,13 @@ async def get_cameras_by_district(district: str, db=Depends(get_db)):
         raise HTTPException(status_code=404, detail="No cameras found in this district")
     return cameras
 
-@cameras.put("/cameras/search/{camera_name}")
-async def search_camera_by_name(camera_name: str, db=Depends(get_db)):
-    cameras = await db_manager.get_camera_by_name(db, camera_name)
+class CameraSearchRequest(BaseModel):
+    camera_name: str
+    district: str
+
+@cameras.post("/cameras/search")
+async def search_camera(request: CameraSearchRequest, db=Depends(get_db)):
+    cameras = await db_manager.get_camera_by_name_and_district(db, request.camera_name, request.district)
     if not cameras:
         raise HTTPException(status_code=404, detail="Camera not found")
     return cameras
