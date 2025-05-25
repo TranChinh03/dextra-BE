@@ -117,14 +117,14 @@ async def get_cameras_by_district(district: str, db=Depends(get_db)):
     return cameras
 
 class CameraSearchRequest(BaseModel):
-    camera_name: str
-    district: str
+    camera_name: Optional[str] = None
+    district: Optional[str] = None
 
 @cameras.post("/cameras/search")
 async def search_camera(request: CameraSearchRequest, db=Depends(get_db)):
     cameras = await db_manager.get_camera_by_name_and_district(db, request.camera_name, request.district)
     if not cameras:
-        raise HTTPException(status_code=404, detail="Camera not found")
+        return []
     return cameras
 
 @cameras.put("/cameras/status")

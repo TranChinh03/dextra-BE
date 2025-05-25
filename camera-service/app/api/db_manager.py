@@ -106,14 +106,19 @@ async def get_cameras_by_district(db: Database, district: str) -> List[dict]:
     return result
 
 async def get_camera_by_name_and_district(db: Database, camera_name: str, district: str) -> List[dict]:
-    query = select(cameras).where(
-        and_(
-            cameras.c.name.ilike(f"%{camera_name}%"),
-            cameras.c.dist == district
-        )
-    )
+    conditions = []
+    if camera_name:
+        conditions.append(cameras.c.name.ilike(f"%{camera_name}%"))
+    if district:
+        conditions.append(cameras.c.dist == district)
+
+    if not conditions:
+        # If neither camera_name nor district is provided, return empty list
+        return await db.fetch_all(select(cameras))
+
+    query = select(cameras).where(and_(*conditions))
     result = await db.fetch_all(query)
-    return result[:3]
+    return result
 
 async def get_demo_cameras(db: Database) -> List[Camera]:
     query = select([demoCameras])

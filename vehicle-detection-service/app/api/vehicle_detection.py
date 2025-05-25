@@ -5,14 +5,16 @@ from PIL import Image, ImageDraw
 import io
 from datetime import datetime
 from .models import Detection, DetectionResponse
+import torch
 
 detections = APIRouter()
 
-model = YOLO("bestv10l.pt", task='detect')  # Load the YOLOv8 model
+model = YOLO("bestv10l.pt", task='detect').to("cuda")  # Load the YOLOv8 model
 vehicle_classes = ['bicycle', 'motorcycle', 'car', 'van', 'truck', 'bus', 'fire truck', 'container']
 
 @detections.post("/detect-vehicles", response_model=DetectionResponse)
 async def detect_vehicles(file: UploadFile = File(...)):
+    print(f"Model loaded on device: {torch.cuda.is_available()}")
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
     try:
