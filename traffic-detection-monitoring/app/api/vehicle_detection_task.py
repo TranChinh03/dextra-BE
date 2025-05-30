@@ -23,7 +23,7 @@ async def traffic_detection_task():
     for camera in cameraList:
         # print(f"Camera ID: {camera['_id']}, Name: {camera['name']}, liveviewUrl: {camera['liveviewUrl']}")
         if not camera['liveviewUrl'].startswith('http'):
-            print(f"Skipping camera {camera['_id']} due to invalid liveviewUrl: {camera['liveviewUrl']}")
+            # print(f"Skipping camera {camera['_id']} due to invalid liveviewUrl: {camera['liveviewUrl']}")
             continue
         # Lấy hình ảnh từ URL liveviewUrl
         image = await get_image(camera['liveviewUrl'])

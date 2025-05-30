@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-
 import httpx
 from app.api.db import cameras, get_db, follow_camera, demoCameras
 from app.api.models import CAMERA_API_URL, Camera, FollowRequest, FollowCamera, CreateCamera

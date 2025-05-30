@@ -26,12 +26,12 @@ async def start_scheduler():
     asyncio.create_task(timer_task())
     
 async def timer_task():
-    # while True:
-    start_time = time.time()
-    print("Thực hiện nhiệm vụ.")
-    await traffic_detection_task()
-    elapsed = time.time() - start_time
-    print(f"Xử lý xong. Thời gian thực hiện: {elapsed:.2f} giây.")
+    while True:
+    # start_time = time.time()
+    # print("Thực hiện nhiệm vụ.")
+        await traffic_detection_task()
+    # elapsed = time.time() - start_time
+    # print(f"Xử lý xong. Thời gian thực hiện: {elapsed:.2f} giây.")
     
 @app.on_event("shutdown")
 async def shutdown():
