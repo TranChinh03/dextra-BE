@@ -33,6 +33,7 @@ class DetectionResultsByDate(BaseModel):
     numberOfBus: int
     numberOfFireTruck: int
     numberOfContainer: int
+    details: list['ResultDetail'] = Field(default_factory=list)
     
 class CustomDetectionResultsInADay(BaseModel):
     date: str
@@ -46,12 +47,26 @@ class CustomDetectionResultsInADay(BaseModel):
     numberOfBus: int = 0
     numberOfFireTruck: int = 0
     numberOfContainer: int = 0
+    details: list['ResultDetail'] = Field(default_factory=list)
     
 class DetectionResultsByDistrict(BaseModel):
     district: str
     date: str
     timeFrom: str
     timeTo: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    details: list['ResultDetail'] = Field(default_factory=list)
+    
+class ResultDetail(BaseModel):
+    date: str
+    time: str
     numberOfBicycle: int = 0
     numberOfMotorcycle: int = 0
     numberOfCar: int = 0

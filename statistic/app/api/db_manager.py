@@ -23,10 +23,11 @@ async def get_date(db: Database) -> object:
 async def get_detection_results_by_date(date: str, db: Database) -> dict:
     """
     Get summed detection results for a specific date.
-    Returns a dict matching DetectionResultsByDate model.
+    Returns a dict matching DetectionResultsByDate model, including details for each timestamp.
     """
     query = select(
         detection_results.c.date,
+        detection_results.c.time,
         detection_results.c.numberOfBicycle,
         detection_results.c.numberOfMotorcycle,
         detection_results.c.numberOfCar,
@@ -39,6 +40,35 @@ async def get_detection_results_by_date(date: str, db: Database) -> dict:
     rows = await db.fetch_all(query)
     if not rows:
         return None
+
+    # Aggregate by (date, time)
+    details_dict = {}
+    for row in rows:
+        key = (row["date"], row["time"])
+        if key not in details_dict:
+            details_dict[key] = {
+                "date": row["date"],
+                "time": row["time"],
+                "numberOfBicycle": 0,
+                "numberOfMotorcycle": 0,
+                "numberOfCar": 0,
+                "numberOfVan": 0,
+                "numberOfTruck": 0,
+                "numberOfBus": 0,
+                "numberOfFireTruck": 0,
+                "numberOfContainer": 0,
+            }
+        details_dict[key]["numberOfBicycle"] += row["numberOfBicycle"]
+        details_dict[key]["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        details_dict[key]["numberOfCar"] += row["numberOfCar"]
+        details_dict[key]["numberOfVan"] += row["numberOfVan"]
+        details_dict[key]["numberOfTruck"] += row["numberOfTruck"]
+        details_dict[key]["numberOfBus"] += row["numberOfBus"]
+        details_dict[key]["numberOfFireTruck"] += row["numberOfFireTruck"]
+        details_dict[key]["numberOfContainer"] += row["numberOfContainer"]
+
+    details = list(details_dict.values())
+
     # Sum up all vehicle counts for the date
     result = {
         "date": date,
@@ -50,22 +80,23 @@ async def get_detection_results_by_date(date: str, db: Database) -> dict:
         "numberOfBus": 0,
         "numberOfFireTruck": 0,
         "numberOfContainer": 0,
+        "details": details
     }
-    for row in rows:
-        result["numberOfBicycle"] += row["numberOfBicycle"]
-        result["numberOfMotorcycle"] += row["numberOfMotorcycle"]
-        result["numberOfCar"] += row["numberOfCar"]
-        result["numberOfVan"] += row["numberOfVan"]
-        result["numberOfTruck"] += row["numberOfTruck"]
-        result["numberOfBus"] += row["numberOfBus"]
-        result["numberOfFireTruck"] += row["numberOfFireTruck"]
-        result["numberOfContainer"] += row["numberOfContainer"]
+    for d in details:
+        result["numberOfBicycle"] += d["numberOfBicycle"]
+        result["numberOfMotorcycle"] += d["numberOfMotorcycle"]
+        result["numberOfCar"] += d["numberOfCar"]
+        result["numberOfVan"] += d["numberOfVan"]
+        result["numberOfTruck"] += d["numberOfTruck"]
+        result["numberOfBus"] += d["numberOfBus"]
+        result["numberOfFireTruck"] += d["numberOfFireTruck"]
+        result["numberOfContainer"] += d["numberOfContainer"]
     return result
 
 async def get_custom_detection_results(db: Database, date: str, timeFrom: str, timeTo: str):
     """
     Get detection results for a specific date and time range.
-    Returns a dict matching CustomDetectionResults model.
+    Returns a dict matching CustomDetectionResults model, including details for each timestamp.
     """
     query = select(
         detection_results.c.date,
@@ -81,15 +112,42 @@ async def get_custom_detection_results(db: Database, date: str, timeFrom: str, t
     ).where(
         and_(
             detection_results.c.date == date,
-            or_(
-                (detection_results.c.time >= timeFrom),
-                (detection_results.c.time <= timeTo)
-            )
+            detection_results.c.time >= timeFrom,
+            detection_results.c.time <= timeTo
         )
     )
     rows = await db.fetch_all(query)
     if not rows:
         return None
+
+    # Aggregate by (date, time)
+    details_dict = {}
+    for row in rows:
+        key = (row["date"], row["time"])
+        if key not in details_dict:
+            details_dict[key] = {
+                "date": row["date"],
+                "time": row["time"],
+                "numberOfBicycle": 0,
+                "numberOfMotorcycle": 0,
+                "numberOfCar": 0,
+                "numberOfVan": 0,
+                "numberOfTruck": 0,
+                "numberOfBus": 0,
+                "numberOfFireTruck": 0,
+                "numberOfContainer": 0,
+            }
+        details_dict[key]["numberOfBicycle"] += row["numberOfBicycle"]
+        details_dict[key]["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        details_dict[key]["numberOfCar"] += row["numberOfCar"]
+        details_dict[key]["numberOfVan"] += row["numberOfVan"]
+        details_dict[key]["numberOfTruck"] += row["numberOfTruck"]
+        details_dict[key]["numberOfBus"] += row["numberOfBus"]
+        details_dict[key]["numberOfFireTruck"] += row["numberOfFireTruck"]
+        details_dict[key]["numberOfContainer"] += row["numberOfContainer"]
+
+    details = list(details_dict.values())
+
     # Sum up all vehicle counts for the specified date and time range
     result = {
         "date": date,
@@ -103,22 +161,23 @@ async def get_custom_detection_results(db: Database, date: str, timeFrom: str, t
         "numberOfBus": 0,
         "numberOfFireTruck": 0,
         "numberOfContainer": 0,
+        "details": details
     }
-    for row in rows:
-        result["numberOfBicycle"] += row["numberOfBicycle"]
-        result["numberOfMotorcycle"] += row["numberOfMotorcycle"]
-        result["numberOfCar"] += row["numberOfCar"]
-        result["numberOfVan"] += row["numberOfVan"]
-        result["numberOfTruck"] += row["numberOfTruck"]
-        result["numberOfBus"] += row["numberOfBus"]
-        result["numberOfFireTruck"] += row["numberOfFireTruck"]
-        result["numberOfContainer"] += row["numberOfContainer"]
+    for d in details:
+        result["numberOfBicycle"] += d["numberOfBicycle"]
+        result["numberOfMotorcycle"] += d["numberOfMotorcycle"]
+        result["numberOfCar"] += d["numberOfCar"]
+        result["numberOfVan"] += d["numberOfVan"]
+        result["numberOfTruck"] += d["numberOfTruck"]
+        result["numberOfBus"] += d["numberOfBus"]
+        result["numberOfFireTruck"] += d["numberOfFireTruck"]
+        result["numberOfContainer"] += d["numberOfContainer"]
     return result
 
 async def get_custom_detection_results_by_district(db: Database, district: str, date: str, timeFrom: str, timeTo: str, cameraList: list):
     """
     Get detection results for a specific district, date, and time range.
-    Returns a list of dicts matching DetectionResultsByDistrict model.
+    Returns a dict matching DetectionResultsByDistrict model, with details summed by date & time.
     """
     query = select(
         detection_results.c.date,
@@ -134,18 +193,44 @@ async def get_custom_detection_results_by_district(db: Database, district: str, 
     ).where(
         and_(
             detection_results.c.date == date,
-            or_(
-                (detection_results.c.time >= timeFrom),
-                (detection_results.c.time <= timeTo)
-            ),
+            detection_results.c.time >= timeFrom,
+            detection_results.c.time <= timeTo,
             detection_results.c.cameraId.in_([cam["_id"] for cam in cameraList])
         )
     )
     rows = await db.fetch_all(query)
     if not rows:
         return None
+
+    # Aggregate by (date, time)
+    details_dict = {}
+    for row in rows:
+        key = (row["date"], row["time"])
+        if key not in details_dict:
+            details_dict[key] = {
+                "date": row["date"],
+                "time": row["time"],
+                "numberOfBicycle": 0,
+                "numberOfMotorcycle": 0,
+                "numberOfCar": 0,
+                "numberOfVan": 0,
+                "numberOfTruck": 0,
+                "numberOfBus": 0,
+                "numberOfFireTruck": 0,
+                "numberOfContainer": 0,
+            }
+        details_dict[key]["numberOfBicycle"] += row["numberOfBicycle"]
+        details_dict[key]["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        details_dict[key]["numberOfCar"] += row["numberOfCar"]
+        details_dict[key]["numberOfVan"] += row["numberOfVan"]
+        details_dict[key]["numberOfTruck"] += row["numberOfTruck"]
+        details_dict[key]["numberOfBus"] += row["numberOfBus"]
+        details_dict[key]["numberOfFireTruck"] += row["numberOfFireTruck"]
+        details_dict[key]["numberOfContainer"] += row["numberOfContainer"]
+
+    details = list(details_dict.values())
+
     # Sum up all vehicle counts for the specified district, date, and time range
-    result = []
     result = {
         "district": district,
         "date": date,
@@ -159,14 +244,15 @@ async def get_custom_detection_results_by_district(db: Database, district: str, 
         "numberOfBus": 0,
         "numberOfFireTruck": 0,
         "numberOfContainer": 0,
+        "details": details
     }
-    for row in rows:
-        result["numberOfBicycle"] += row["numberOfBicycle"]
-        result["numberOfMotorcycle"] += row["numberOfMotorcycle"]
-        result["numberOfCar"] += row["numberOfCar"]
-        result["numberOfVan"] += row["numberOfVan"]
-        result["numberOfTruck"] += row["numberOfTruck"]
-        result["numberOfBus"] += row["numberOfBus"]
-        result["numberOfFireTruck"] += row["numberOfFireTruck"]
-        result["numberOfContainer"] += row["numberOfContainer"]
+    for d in details:
+        result["numberOfBicycle"] += d["numberOfBicycle"]
+        result["numberOfMotorcycle"] += d["numberOfMotorcycle"]
+        result["numberOfCar"] += d["numberOfCar"]
+        result["numberOfVan"] += d["numberOfVan"]
+        result["numberOfTruck"] += d["numberOfTruck"]
+        result["numberOfBus"] += d["numberOfBus"]
+        result["numberOfFireTruck"] += d["numberOfFireTruck"]
+        result["numberOfContainer"] += d["numberOfContainer"]
     return result

@@ -28,7 +28,7 @@ async def start_scheduler():
 async def timer_task():
     # start_time = time.time()
     print("Thực hiện nhiệm vụ.")
-    await traffic_detection_task()
+    # await traffic_detection_task()
     # elapsed = time.time() - start_time
     # print(f"Xử lý xong. Thời gian thực hiện: {elapsed:.2f} giây.")
     
