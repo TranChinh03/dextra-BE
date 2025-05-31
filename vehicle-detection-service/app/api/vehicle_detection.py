@@ -49,7 +49,7 @@ async def detect_vehicles(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@detections.post("/detect/images")
+@detections.post("/detect/visualize")
 async def detect_vehicles_image(file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
@@ -69,5 +69,29 @@ async def detect_vehicles_image(file: UploadFile = File(...)):
         image.save(img_byte_arr, format='JPEG')
         img_byte_arr.seek(0)
         return StreamingResponse(img_byte_arr, media_type="image/jpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@detections.post("/detect/images")
+async def detect_vehicles_image(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image.")
+    try:
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        results = model(image)
+        draw = ImageDraw.Draw(image)
+        for box in results[0].boxes:
+            cls = int(box.cls[0])
+            label = model.names[cls]
+            if label in vehicle_classes:
+                bbox = [float(x) for x in box.xyxy[0].tolist()]
+                draw.rectangle(bbox, outline="red", width=3)
+                draw.text((bbox[0], bbox[1] - 10), label, fill="red")
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG')
+        img_byte_arr.seek(0)
+        # Return as list of ints
+        return list(img_byte_arr.read())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
