@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict
+from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera
 from app.api import db_manager
 from app.api.db_manager import DBManager
 from sqlalchemy.orm import Session
@@ -15,7 +15,8 @@ from pydantic import BaseModel
 
 statistic = APIRouter()
 
-CAMERA_SERVICE_URL = "http://localhost:8002"
+# CAMERA_SERVICE_URL = "http://localhost:8002"
+CAMERA_SERVICE_URL = "http://nginx:8080"
 
 @statistic.get("/timestamp", response_model=List[DetectionTime])
 async def get_timestamp(db: Database = Depends(get_db)) -> List[DetectionTime]:
@@ -72,3 +73,15 @@ async def get_cameras_by_district(district: str) -> List[Dict]:
         response.raise_for_status()
         cameras = response.json()
         return cameras
+    
+@statistic.get("/custom_detection_results_by_camera", response_model=DetectionResultsByCamera)
+async def get_custom_detection_results_by_camera(
+    camera: str, db: Database = Depends(get_db)
+) -> DetectionResultsByCamera:
+    """Get custom detection results by district."""
+    result = await db_manager.get_custom_detection_results_by_camera(
+        db, camera
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
+    return result

@@ -64,9 +64,32 @@ class DetectionResultsByDistrict(BaseModel):
     numberOfContainer: int = 0
     details: list['ResultDetail'] = Field(default_factory=list)
     
+class DetectionResultsByCamera(BaseModel):
+    camera: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    details: list['ResultDetailByDay'] = Field(default_factory=list)
+    
 class ResultDetail(BaseModel):
     date: str
     time: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    
+class ResultDetailByDay(BaseModel):
+    date: str
     numberOfBicycle: int = 0
     numberOfMotorcycle: int = 0
     numberOfCar: int = 0

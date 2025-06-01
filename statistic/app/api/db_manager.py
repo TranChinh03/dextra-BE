@@ -256,3 +256,78 @@ async def get_custom_detection_results_by_district(db: Database, district: str, 
         result["numberOfFireTruck"] += d["numberOfFireTruck"]
         result["numberOfContainer"] += d["numberOfContainer"]
     return result
+
+async def get_custom_detection_results_by_camera(db: Database, camera: str):
+    """
+    Get detection statistics for a specific camera, grouped by date.
+    Returns a dict matching DetectionResultsByCamera model, including details for each date.
+    """
+    from sqlalchemy import select, and_
+
+    query = select(
+        detection_results.c.date,
+        detection_results.c.numberOfBicycle,
+        detection_results.c.numberOfMotorcycle,
+        detection_results.c.numberOfCar,
+        detection_results.c.numberOfVan,
+        detection_results.c.numberOfTruck,
+        detection_results.c.numberOfBus,
+        detection_results.c.numberOfFireTruck,
+        detection_results.c.numberOfContainer,
+    ).where(
+        detection_results.c.cameraId == camera
+    )
+    rows = await db.fetch_all(query)
+    if not rows:
+        return None
+
+    # Aggregate by date
+    details_dict = {}
+    for row in rows:
+        key = row["date"]
+        if key not in details_dict:
+            details_dict[key] = {
+                "date": row["date"],
+                "numberOfBicycle": 0,
+                "numberOfMotorcycle": 0,
+                "numberOfCar": 0,
+                "numberOfVan": 0,
+                "numberOfTruck": 0,
+                "numberOfBus": 0,
+                "numberOfFireTruck": 0,
+                "numberOfContainer": 0,
+            }
+        details_dict[key]["numberOfBicycle"] += row["numberOfBicycle"]
+        details_dict[key]["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        details_dict[key]["numberOfCar"] += row["numberOfCar"]
+        details_dict[key]["numberOfVan"] += row["numberOfVan"]
+        details_dict[key]["numberOfTruck"] += row["numberOfTruck"]
+        details_dict[key]["numberOfBus"] += row["numberOfBus"]
+        details_dict[key]["numberOfFireTruck"] += row["numberOfFireTruck"]
+        details_dict[key]["numberOfContainer"] += row["numberOfContainer"]
+
+    details = list(details_dict.values())
+
+    # Sum up all vehicle counts for the camera
+    result = {
+        "camera": camera,
+        "numberOfBicycle": 0,
+        "numberOfMotorcycle": 0,
+        "numberOfCar": 0,
+        "numberOfVan": 0,
+        "numberOfTruck": 0,
+        "numberOfBus": 0,
+        "numberOfFireTruck": 0,
+        "numberOfContainer": 0,
+        "details": details
+    }
+    for d in details:
+        result["numberOfBicycle"] += d["numberOfBicycle"]
+        result["numberOfMotorcycle"] += d["numberOfMotorcycle"]
+        result["numberOfCar"] += d["numberOfCar"]
+        result["numberOfVan"] += d["numberOfVan"]
+        result["numberOfTruck"] += d["numberOfTruck"]
+        result["numberOfBus"] += d["numberOfBus"]
+        result["numberOfFireTruck"] += d["numberOfFireTruck"]
+        result["numberOfContainer"] += d["numberOfContainer"]
+    return result
