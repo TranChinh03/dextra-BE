@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera
+from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay
 from app.api import db_manager
 from app.api.db_manager import DBManager
 from sqlalchemy.orm import Session
@@ -78,9 +78,21 @@ async def get_cameras_by_district(district: str) -> List[Dict]:
 async def get_custom_detection_results_by_camera(
     camera: str, db: Database = Depends(get_db)
 ) -> DetectionResultsByCamera:
-    """Get custom detection results by district."""
+    """Get custom detection results by camera."""
     result = await db_manager.get_custom_detection_results_by_camera(
         db, camera
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
+    return result
+
+@statistic.get("/_detection_results_by_date", response_model=List[ResultDetailByDay])
+async def get_custom_detection_results_by_camera(
+    db: Database = Depends(get_db)
+) -> List[ResultDetailByDay]:
+    """Get custom detection results by date."""
+    result = await db_manager.get_custom_detection_results_by_date(
+        db
     )
     if not result:
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
