@@ -331,7 +331,7 @@ async def get_custom_detection_results_by_camera(db: Database, camera: str):
         result["numberOfContainer"] += d["numberOfContainer"]
     return result
 
-async def get_custom_detection_results_by_date(db: Database):
+async def get_traffic_tracking_by_date(db: Database):
     """
     Get detection results grouped by date.
     Returns a dict matching DetectionResultsByCamera model, including details for each date.

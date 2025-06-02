@@ -86,12 +86,12 @@ async def get_custom_detection_results_by_camera(
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
     return result
 
-@statistic.get("/detection_results_by_date", response_model=List[ResultDetailByDay])
-async def get_custom_detection_results_by_camera(
+@statistic.get("/traffic_tracking_by_date", response_model=List[ResultDetailByDay])
+async def get_traffic_tracking_by_camera(
     db: Database = Depends(get_db)
 ) -> List[ResultDetailByDay]:
     """Get custom detection results by date."""
-    result = await db_manager.get_custom_detection_results_by_date(
+    result = await db_manager.get_traffic_tracking_by_date(
         db
     )
     if not result:
