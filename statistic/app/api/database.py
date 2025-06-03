@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = 'postgresql://neondb_owner:npg_dHrx7GXDyBf1@ep-empty-water-a1rcw6q3-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
+DATABASE_URL = 'postgresql://neondb_owner:npg_mHXqxOQ6SR5y@ep-falling-smoke-a1ps92xb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
 
 engine = create_engine(DATABASE_URL)
 metadata = MetaData()

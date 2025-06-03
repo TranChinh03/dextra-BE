@@ -15,16 +15,16 @@ CAMERA_SERVICE_URL = "http://localhost:8002"
 async def traffic_detection_task():
     # Lấy danh sách camera từ API
     cameraList = await get_cameras()
-    now = datetime.now().replace(hour=23, minute=0, second=0, microsecond=0)
+    now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_time = now - timedelta(days=7)
     end_time = now
 
-    current_time = start_time.replace(hour=23, minute=0, second=0, microsecond=0)
+    current_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
     while current_time <= end_time:
         print(f"Đang xử lý thời gian: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
         # You may want to pass current_time to iterate_task if needed
         await iterate_task(cameraList, current_time)
-        current_time += timedelta(minutes=30)
+        current_time += timedelta(hours=1)
     
 async def iterate_task(cameraList: list, currentTime: datetime):
     db = await get_db()
@@ -58,9 +58,9 @@ async def write_detection_results_to_db(db: Database, camera_info: dict, current
         numberOfBicycle=random.randint(0, 10),
         numberOfMotorcycle=random.randint(10, 50),
         numberOfCar=random.randint(10, 20),
-        numberOfVan=random.randint(0, 5),
-        numberOfTruck=random.randint(0, 5),
-        numberOfBus=random.randint(0, 5),
+        numberOfVan=random.randint(0, 2),
+        numberOfTruck=random.randint(0, 2),
+        numberOfBus=random.randint(0, 2),
         numberOfFireTruck=random.randint(0, 2),
         numberOfContainer= random.randint(0, 2),
     )
