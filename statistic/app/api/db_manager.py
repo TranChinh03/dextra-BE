@@ -336,12 +336,16 @@ async def get_custom_detection_results_by_camera(db: Database, camera: str):
         result["numberOfContainer"] += d["numberOfContainer"]
     return result
 
-async def get_traffic_tracking_by_date(db: Database):
+async def get_traffic_tracking_by_date(
+    db: Database, 
+    dateFrom: Optional[str] = None, 
+    dateTo: Optional[str] = None
+):
     """
     Get detection results grouped by date.
-    Returns a dict matching DetectionResultsByCamera model, including details for each date.
+    Optionally filter by dateFrom and dateTo.
+    Returns a list of dicts, each matching DetectionResultsByCamera model for a date.
     """
-
     query = select(
         detection_results.c.date,
         detection_results.c.numberOfBicycle,
@@ -353,6 +357,21 @@ async def get_traffic_tracking_by_date(db: Database):
         detection_results.c.numberOfFireTruck,
         detection_results.c.numberOfContainer,
     )
+    if dateFrom and dateTo:
+        if dateFrom.strip() and dateTo.strip():
+            query = query.where(
+                and_(
+                    detection_results.c.date >= dateFrom,
+                    detection_results.c.date <= dateTo
+                )
+            )
+    elif dateFrom:
+        if dateFrom.strip():
+            query = query.where(detection_results.c.date >= dateFrom)
+    elif dateTo:
+        if dateTo.strip():
+            query = query.where(detection_results.c.date <= dateTo)
+
     rows = await db.fetch_all(query)
     if not rows:
         return None

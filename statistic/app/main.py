@@ -5,6 +5,7 @@ from app.api.statistic import statistic
 import asyncio
 from app.api.database import engine, Base
 import time
+from dotenv import load_dotenv
 
 app = FastAPI(openapi_url="/api/v1/statistic/openapi.json", docs_url="/docs")
 
@@ -21,6 +22,7 @@ Base.metadata.create_all(bind=engine)
 # Khởi động scheduler khi ứng dụng khởi chạy
 @app.on_event("startup")
 async def start_scheduler():
+    load_dotenv()
     await database.connect()
     
 @app.on_event("shutdown")

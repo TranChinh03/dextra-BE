@@ -2,16 +2,15 @@ from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult
 from app.api import db_manager
-from app.api.db_manager import DBManager
-from sqlalchemy.orm import Session
 from app.api.database import get_db
 from databases import Database
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, From, To, TemplateId, Substitution
-from sqlalchemy import select
 import httpx
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from app.api.email_builder import build_stats_email_html, generate_chart_image
+from fastapi import Body
+import os
 
 statistic = APIRouter()
 
@@ -115,3 +114,55 @@ async def get_heatmap(
         raise HTTPException(status_code=404, detail="Heatmap data not found for the given date and time range")
     return result
 
+@statistic.post("/send_email")
+async def send_email(
+    email: str = Body(..., embed=True),
+    dateFrom: Optional[str] = Body(None, embed=True),
+    dateTo: Optional[str] = Body(None, embed=True),
+    db: Database = Depends(get_db)
+):
+    """
+    Send detection statistics via email for a given date range using SMTP.
+    """
+    # Example: get statistics for the date range (implement your own logic as needed)
+    stats = await db_manager.get_traffic_tracking_by_date(db, dateFrom, dateTo)
+    if not stats:
+        raise HTTPException(status_code=404, detail="No statistics found for the given date range")
+
+    # Prepare email content
+    subject = f"Detection Statistics from {dateFrom} to {dateTo}"
+
+    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_PORT = 587
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        raise HTTPException(status_code=500, detail="SMTP credentials not configured")
+
+    html_content = build_stats_email_html(stats, dateFrom, dateTo)
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"🚦 Detection Statistics from {dateFrom} to {dateTo}"
+    msg["From"] = SMTP_USERNAME
+    msg["To"] = email
+
+   # Create alternative part
+    alt_part = MIMEMultipart("alternative")
+    html_content = build_stats_email_html(stats, dateFrom, dateTo)
+    alt_part.attach(MIMEText("Your email client does not support HTML.", "plain"))
+    alt_part.attach(MIMEText(html_content, "html"))
+    msg.attach(alt_part)
+
+    # Attach chart image
+    image = generate_chart_image(stats)
+    msg.attach(image)
+    
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.sendmail(SMTP_USERNAME, [email], msg.as_string())
+        return {"message": "Email sent successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
