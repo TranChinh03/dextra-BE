@@ -98,3 +98,32 @@ class ResultDetailByDay(BaseModel):
     numberOfBus: int = 0
     numberOfFireTruck: int = 0
     numberOfContainer: int = 0
+    
+class HeatmapResult(BaseModel):
+    date: str
+    timeFrom: str
+    timeTo: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    details: list['HeatmapDetail'] = Field(default_factory=list)
+
+class Location(BaseModel):
+    type: str
+    coordinates: list[float] = Field(..., description="Coordinates in [longitude, latitude] format")
+class HeatmapDetail(BaseModel):
+    camera: str
+    loc: Location
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0

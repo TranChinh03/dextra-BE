@@ -5,6 +5,11 @@ from sqlalchemy import insert, or_, select, update, and_, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+import httpx
+from typing import List, Dict, Optional
+
+CAMERA_SERVICE_URL = "http://nginx:8080"
+CAMERA_API_URL = "https://api.notis.vn/v4/cameras/bybbox?lat1=11.160767&lng1=106.554166&lat2=9.45&lng2=128.99999"
 
 class DBManager:
     def __init__(self, session: get_db):
@@ -380,3 +385,104 @@ async def get_traffic_tracking_by_date(db: Database):
     details = list(details_dict.values())
     
     return details
+
+async def fetch_cameras_from_api() -> List[Dict]:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(CAMERA_API_URL)
+        response.raise_for_status()
+        data = response.json()
+        rs = [{"camera_id": x["_id"], "loc": x["loc"]} for x in data]
+        return rs
+
+async def get_heatmap(db: Database, date: str, timeFrom: Optional[str] = None, timeTo: Optional[str] = None) -> dict:
+    """
+    Get heatmap data for a specific date and optional time range.
+    Returns a dict matching HeatmapResult model.
+    """
+    cameraList = await fetch_cameras_from_api()
+    query = select(
+        detection_results.c.date,
+        detection_results.c.time,
+        detection_results.c.cameraId,
+        detection_results.c.numberOfBicycle,
+        detection_results.c.numberOfMotorcycle,
+        detection_results.c.numberOfCar,
+        detection_results.c.numberOfVan,
+        detection_results.c.numberOfTruck,
+        detection_results.c.numberOfBus,
+        detection_results.c.numberOfFireTruck,
+        detection_results.c.numberOfContainer,
+    ).where(detection_results.c.date == date)
+
+    if timeFrom and timeTo:
+        query = query.where(
+            and_(
+                detection_results.c.time >= timeFrom,
+                detection_results.c.time <= timeTo
+            )
+        )
+
+    rows = await db.fetch_all(query)
+    if not rows:
+        return None
+
+    # Aggregate by (cameraId)
+    details_dict = {}
+    for row in rows:
+        key = (row["cameraId"])
+        if key not in details_dict:
+            location = next((x["loc"] for x in cameraList if x["camera_id"] == key), None)
+            if location is None:
+                # Skip this camera if location is missing to avoid validation error
+                continue
+            details_dict[key] = {
+                "date": row["date"],
+                "camera": key,
+                "loc": location,
+                "numberOfBicycle": 0,
+                "numberOfMotorcycle": 0,
+                "numberOfCar": 0,
+                "numberOfVan": 0,
+                "numberOfTruck": 0,
+                "numberOfBus": 0,
+                "numberOfFireTruck": 0,
+                "numberOfContainer": 0,
+            }
+        details_dict[key]["numberOfBicycle"] += row["numberOfBicycle"]
+        details_dict[key]["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        details_dict[key]["numberOfCar"] += row["numberOfCar"]
+        details_dict[key]["numberOfVan"] += row["numberOfVan"]
+        details_dict[key]["numberOfTruck"] += row["numberOfTruck"]
+        details_dict[key]["numberOfBus"] += row["numberOfBus"]
+        details_dict[key]["numberOfFireTruck"] += row["numberOfFireTruck"]
+        details_dict[key]["numberOfContainer"] += row["numberOfContainer"]
+
+    details = list(details_dict.values())
+
+    # Sum up all vehicle counts for the specified date and time range
+    result = {
+        "date": date,
+        "timeFrom": timeFrom or "",
+        "timeTo": timeTo or "",
+        "numberOfBicycle": 0,
+        "numberOfMotorcycle": 0,
+        "numberOfCar": 0,
+        "numberOfVan": 0,
+        "numberOfTruck": 0,
+        "numberOfBus": 0,
+        "numberOfFireTruck": 0,
+        "numberOfContainer": 0,
+        "details": details
+    }
+    
+    for d in details:
+        result["numberOfBicycle"] += d["numberOfBicycle"]
+        result["numberOfMotorcycle"] += d["numberOfMotorcycle"]
+        result["numberOfCar"] += d["numberOfCar"]
+        result["numberOfVan"] += d["numberOfVan"]
+        result["numberOfTruck"] += d["numberOfTruck"]
+        result["numberOfBus"] += d["numberOfBus"]
+        result["numberOfFireTruck"] += d["numberOfFireTruck"]
+        result["numberOfContainer"] += d["numberOfContainer"]
+        
+    return result

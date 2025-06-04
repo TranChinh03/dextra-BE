@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay
+from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult
 from app.api import db_manager
 from app.api.db_manager import DBManager
 from sqlalchemy.orm import Session
@@ -97,3 +97,21 @@ async def get_traffic_tracking_by_camera(
     if not result:
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
     return result
+
+@statistic.get("/heatmap", response_model=HeatmapResult)
+async def get_heatmap(
+    date: str,
+    time_from: Optional[str] = None,
+    time_to: Optional[str] = None,
+    db: Database = Depends(get_db)
+) -> HeatmapResult:
+    """Get heatmap data."""
+    if time_from is None:
+        time_from = "00:00:00"
+    if time_to is None:
+        time_to = "23:59:59"
+    result = await db_manager.get_heatmap(db, date, time_from, time_to)
+    if not result:
+        raise HTTPException(status_code=404, detail="Heatmap data not found for the given date and time range")
+    return result
+
