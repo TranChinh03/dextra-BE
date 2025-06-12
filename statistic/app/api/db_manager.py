@@ -336,6 +336,77 @@ async def get_custom_detection_results_by_camera(db: Database, camera: str):
         result["numberOfContainer"] += d["numberOfContainer"]
     return result
 
+async def get_traffic_tracking_by_camera_in_date(
+    db: Database,
+    date: str = None,
+    camera: str = None
+): 
+    """
+    Get detection results for a specific camera on a specific date.
+    Returns a dict matching CameraResultInADay model.
+    """
+    from sqlalchemy import and_
+    query = select(
+        detection_results.c.date,
+        detection_results.c.time,
+        detection_results.c.cameraId,
+        detection_results.c.numberOfBicycle,
+        detection_results.c.numberOfMotorcycle,
+        detection_results.c.numberOfCar,
+        detection_results.c.numberOfVan,
+        detection_results.c.numberOfTruck,
+        detection_results.c.numberOfBus,
+        detection_results.c.numberOfFireTruck,
+        detection_results.c.numberOfContainer,
+    ).where(
+        and_(
+            detection_results.c.date == date,
+            detection_results.c.cameraId == camera
+        )
+    )
+    rows = await db.fetch_all(query)
+    if not rows:
+        return None
+
+    # Aggregate total vehicle counts for the day
+    result = {
+        "date": date,
+        "cameraId": camera,
+        "numberOfBicycle": 0,
+        "numberOfMotorcycle": 0,
+        "numberOfCar": 0,
+        "numberOfVan": 0,
+        "numberOfTruck": 0,
+        "numberOfBus": 0,
+        "numberOfFireTruck": 0,
+        "numberOfContainer": 0,
+        "details": []
+    }
+    details = []
+    for row in rows:
+        result["numberOfBicycle"] += row["numberOfBicycle"]
+        result["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        result["numberOfCar"] += row["numberOfCar"]
+        result["numberOfVan"] += row["numberOfVan"]
+        result["numberOfTruck"] += row["numberOfTruck"]
+        result["numberOfBus"] += row["numberOfBus"]
+        result["numberOfFireTruck"] += row["numberOfFireTruck"]
+        result["numberOfContainer"] += row["numberOfContainer"]
+        details.append({
+            "date": row["date"],
+            "time": row["time"],
+            "numberOfBicycle": row["numberOfBicycle"],
+            "numberOfMotorcycle": row["numberOfMotorcycle"],
+            "numberOfCar": row["numberOfCar"],
+            "numberOfVan": row["numberOfVan"],
+            "numberOfTruck": row["numberOfTruck"],
+            "numberOfBus": row["numberOfBus"],
+            "numberOfFireTruck": row["numberOfFireTruck"],
+            "numberOfContainer": row["numberOfContainer"]
+        })
+    result["details"] = details
+    return result
+
 async def get_traffic_tracking_by_date(
     db: Database, 
     dateFrom: Optional[str] = None, 
@@ -404,6 +475,7 @@ async def get_traffic_tracking_by_date(
     details = list(details_dict.values())
     
     return details
+
 
 async def fetch_cameras_from_api() -> List[Dict]:
     async with httpx.AsyncClient() as client:

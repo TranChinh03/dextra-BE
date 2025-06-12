@@ -99,6 +99,19 @@ class ResultDetailByDay(BaseModel):
     numberOfFireTruck: int = 0
     numberOfContainer: int = 0
     
+class CameraResultInADay(BaseModel):
+    date: str
+    cameraId: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    details: list['ResultDetail'] = Field(default_factory=list)
+    
 class HeatmapResult(BaseModel):
     date: str
     timeFrom: str

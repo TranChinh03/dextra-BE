@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult
+from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult, CameraResultInADay
 from app.api import db_manager
 from app.api.database import get_db
 from databases import Database
@@ -86,7 +86,7 @@ async def get_custom_detection_results_by_camera(
     return result
 
 @statistic.get("/traffic_tracking_by_date", response_model=List[ResultDetailByDay])
-async def get_traffic_tracking_by_camera(
+async def get_traffic_tracking_by_date(
     db: Database = Depends(get_db)
 ) -> List[ResultDetailByDay]:
     """Get custom detection results by date."""
@@ -114,7 +114,21 @@ async def get_heatmap(
         raise HTTPException(status_code=404, detail="Heatmap data not found for the given date and time range")
     return result
 
-@statistic.post("/send_email")
+@statistic.get("/traffic_tracking_by_camera_in_date", response_model=CameraResultInADay)
+async def get_traffic_tracking_by_camera_in_date(
+    db: Database = Depends(get_db),
+    date: str = None,
+    camera: str = None,
+) -> CameraResultInADay:
+    """Get custom detection results by camera."""
+    result = await db_manager.get_traffic_tracking_by_camera_in_date(
+        db, date, camera
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
+    return result
+
+@statistic.post("/send_email_by_date")
 async def send_email(
     email: str = Body(..., embed=True),
     dateFrom: Optional[str] = Body(None, embed=True),
@@ -128,9 +142,6 @@ async def send_email(
     stats = await db_manager.get_traffic_tracking_by_date(db, dateFrom, dateTo)
     if not stats:
         raise HTTPException(status_code=404, detail="No statistics found for the given date range")
-
-    # Prepare email content
-    subject = f"Detection Statistics from {dateFrom} to {dateTo}"
 
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
