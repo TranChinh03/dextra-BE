@@ -119,10 +119,13 @@ async def get_traffic_tracking_by_camera_in_date(
     db: Database = Depends(get_db),
     date: str = None,
     camera: str = None,
+    timeFrom: Optional[str] = None,
+    timeTo: Optional[str] = None,
 ) -> CameraResultInADay:
     """Get custom detection results by camera."""
+    
     result = await db_manager.get_traffic_tracking_by_camera_in_date(
-        db, date, camera
+        db, date, camera, timeFrom, timeTo
     )
     if not result:
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
@@ -132,10 +135,12 @@ async def get_traffic_tracking_by_camera_in_date(
 async def get_heatmap_in_a_day(
     db: Database = Depends(get_db),
     date: str = None,
+    timeFrom: Optional[str] = None,
+    timeTo: Optional[str] = None,
 ) -> HeatmapInADay:
     """Get custom detection heatmap results by camera."""
     result = await db_manager.get_heatmap_in_a_day(
-        db, date
+        db, date, timeFrom, timeTo
     )
     if not result:
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")

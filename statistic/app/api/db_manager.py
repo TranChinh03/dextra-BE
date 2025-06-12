@@ -341,7 +341,9 @@ async def get_custom_detection_results_by_camera(db: Database, camera: str):
 async def get_traffic_tracking_by_camera_in_date(
     db: Database,
     date: str = None,
-    camera: str = None
+    camera: str = None,
+    timeFrom: Optional[str] = None,
+    timeTo: Optional[str] = None
 ): 
     """
     Get detection results for a specific camera on a specific date.
@@ -366,6 +368,16 @@ async def get_traffic_tracking_by_camera_in_date(
             detection_results.c.cameraId == camera
         )
     )
+    
+    if timeFrom and timeTo:
+        query = query.where(
+            and_(
+                detection_results.c.time >= timeFrom,
+                detection_results.c.time <= timeTo
+            )
+        )
+        
+        
     rows = await db.fetch_all(query)
     if not rows:
         return None
@@ -580,7 +592,7 @@ async def get_heatmap(db: Database, date: str, timeFrom: Optional[str] = None, t
         
     return result
 
-async def get_heatmap_in_a_day(db: Database, date: str) -> dict:
+async def get_heatmap_in_a_day(db: Database, date: str, timeFrom: Optional[str] = None, timeTo: Optional[str] = None):  
     """
     Get heatmap data for a specific date, grouped by hour.
     Returns a dict matching HeatmapInADay model.
@@ -600,6 +612,15 @@ async def get_heatmap_in_a_day(db: Database, date: str) -> dict:
         detection_results.c.numberOfFireTruck,
         detection_results.c.numberOfContainer,
     ).where(detection_results.c.date == date)
+    
+    if timeFrom and timeTo:
+        query = query.where(
+            and_(
+                detection_results.c.time >= timeFrom,
+                detection_results.c.time <= timeTo
+            )
+        )
+    
     rows = await db.fetch_all(query)
     if not rows:
         return None
