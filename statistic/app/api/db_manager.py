@@ -16,12 +16,14 @@ class DBManager:
         self.session = session
 
 async def get_timestamp(db: Database) -> object:
-    query = select(detection_results.c.date, detection_results.c.time).distinct()
+    query = select(detection_results.c.date, detection_results.c.time).distinct().order_by(
+        detection_results.c.date, detection_results.c.time
+    )
     result = await db.fetch_all(query)
     return result
 
 async def get_date(db: Database) -> object:
-    query = select(detection_results.c.date).distinct()
+    query = select(detection_results.c.date).distinct().order_by(detection_results.c.date)
     result = await db.fetch_all(query)
     return result
 
@@ -576,4 +578,102 @@ async def get_heatmap(db: Database, date: str, timeFrom: Optional[str] = None, t
         result["numberOfFireTruck"] += d["numberOfFireTruck"]
         result["numberOfContainer"] += d["numberOfContainer"]
         
+    return result
+
+async def get_heatmap_in_a_day(db: Database, date: str) -> dict:
+    """
+    Get heatmap data for a specific date, grouped by hour.
+    Returns a dict matching HeatmapInADay model.
+    """
+    cameraList = await fetch_cameras_from_api()
+    # Fetch all detection results for the date
+    query = select(
+        detection_results.c.date,
+        detection_results.c.time,
+        detection_results.c.cameraId,
+        detection_results.c.numberOfBicycle,
+        detection_results.c.numberOfMotorcycle,
+        detection_results.c.numberOfCar,
+        detection_results.c.numberOfVan,
+        detection_results.c.numberOfTruck,
+        detection_results.c.numberOfBus,
+        detection_results.c.numberOfFireTruck,
+        detection_results.c.numberOfContainer,
+    ).where(detection_results.c.date == date)
+    rows = await db.fetch_all(query)
+    if not rows:
+        return None
+
+    # Group by hour and camera
+    from collections import defaultdict
+
+    # {hour: {cameraId: {...}}}
+    hour_camera_dict = defaultdict(lambda: defaultdict(lambda: {
+        "camera": None,
+        "loc": None,
+        "numberOfBicycle": 0,
+        "numberOfMotorcycle": 0,
+        "numberOfCar": 0,
+        "numberOfVan": 0,
+        "numberOfTruck": 0,
+        "numberOfBus": 0,
+        "numberOfFireTruck": 0,
+        "numberOfContainer": 0,
+    }))
+
+    # For total sum
+    total = {
+        "numberOfBicycle": 0,
+        "numberOfMotorcycle": 0,
+        "numberOfCar": 0,
+        "numberOfVan": 0,
+        "numberOfTruck": 0,
+        "numberOfBus": 0,
+        "numberOfFireTruck": 0,
+        "numberOfContainer": 0,
+    }
+
+    for row in rows:
+        # Group by hour (HH:00:00)
+        hour = row["time"][:2] + ":00:00"
+        cam_id = row["cameraId"]
+        location = next((x["loc"] for x in cameraList if x["camera_id"] == cam_id), None)
+        cam_data = hour_camera_dict[hour][cam_id]
+        cam_data["camera"] = cam_id
+        cam_data["loc"] = location
+        cam_data["numberOfBicycle"] += row["numberOfBicycle"]
+        cam_data["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        cam_data["numberOfCar"] += row["numberOfCar"]
+        cam_data["numberOfVan"] += row["numberOfVan"]
+        cam_data["numberOfTruck"] += row["numberOfTruck"]
+        cam_data["numberOfBus"] += row["numberOfBus"]
+        cam_data["numberOfFireTruck"] += row["numberOfFireTruck"]
+        cam_data["numberOfContainer"] += row["numberOfContainer"]
+
+        # Sum for the whole day
+        total["numberOfBicycle"] += row["numberOfBicycle"]
+        total["numberOfMotorcycle"] += row["numberOfMotorcycle"]
+        total["numberOfCar"] += row["numberOfCar"]
+        total["numberOfVan"] += row["numberOfVan"]
+        total["numberOfTruck"] += row["numberOfTruck"]
+        total["numberOfBus"] += row["numberOfBus"]
+        total["numberOfFireTruck"] += row["numberOfFireTruck"]
+        total["numberOfContainer"] += row["numberOfContainer"]
+
+    # Build details: list of HeatInTime (one per hour)
+    details = []
+    for hour in sorted(hour_camera_dict.keys()):
+        data = list(hour_camera_dict[hour].values())
+        details.append({
+            "time": hour,
+            "data": data
+        })
+
+    result = {
+        "date": date,
+        "timeFrom": "00:00:00",
+        "timeTo": "23:59:59",
+        **total,
+        "details": details
+    }
     return result

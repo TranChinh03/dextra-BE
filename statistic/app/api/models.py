@@ -125,6 +125,24 @@ class HeatmapResult(BaseModel):
     numberOfFireTruck: int = 0
     numberOfContainer: int = 0
     details: list['HeatmapDetail'] = Field(default_factory=list)
+    
+class HeatmapInADay(BaseModel):
+    date: str
+    timeFrom: str
+    timeTo: str
+    numberOfBicycle: int = 0
+    numberOfMotorcycle: int = 0
+    numberOfCar: int = 0
+    numberOfVan: int = 0
+    numberOfTruck: int = 0
+    numberOfBus: int = 0
+    numberOfFireTruck: int = 0
+    numberOfContainer: int = 0
+    details: list['HeatInTime'] = Field(default_factory=list)
+    
+class HeatInTime(BaseModel):
+    time: str
+    data: list['HeatmapDetail'] = Field(default_factory=list)
 
 class Location(BaseModel):
     type: str

@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult, CameraResultInADay
+from app.api.models import DetectionTime, DetectionDate, DetectionResultsByDate, CustomDetectionResultsInADay, DetectionResultsByDistrict, DetectionResultsByCamera, ResultDetailByDay, HeatmapResult, CameraResultInADay, HeatmapInADay
 from app.api import db_manager
 from app.api.database import get_db
 from databases import Database
@@ -123,6 +123,19 @@ async def get_traffic_tracking_by_camera_in_date(
     """Get custom detection results by camera."""
     result = await db_manager.get_traffic_tracking_by_camera_in_date(
         db, date, camera
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
+    return result
+
+@statistic.get("/heatmap_in_a_day", response_model=HeatmapInADay)
+async def get_heatmap_in_a_day(
+    db: Database = Depends(get_db),
+    date: str = None,
+) -> HeatmapInADay:
+    """Get custom detection heatmap results by camera."""
+    result = await db_manager.get_heatmap_in_a_day(
+        db, date
     )
     if not result:
         raise HTTPException(status_code=404, detail="Custom detection results not found for the given district")
