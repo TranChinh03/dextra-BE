@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from typing import Optional
 from pydantic import BaseModel, Field
 
 class DetectionResults(BaseModel):
@@ -149,7 +149,7 @@ class Location(BaseModel):
     coordinates: list[float] = Field(..., description="Coordinates in [longitude, latitude] format")
 class HeatmapDetail(BaseModel):
     camera: str
-    loc: Location
+    loc: Optional[Location] = None
     numberOfBicycle: int = 0
     numberOfMotorcycle: int = 0
     numberOfCar: int = 0
