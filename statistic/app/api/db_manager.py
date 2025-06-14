@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 import httpx
 from typing import List, Dict, Optional
+from collections import defaultdict
 
 CAMERA_SERVICE_URL = "http://nginx:8080"
 CAMERA_API_URL = "https://api.notis.vn/v4/cameras/bybbox?lat1=11.160767&lng1=106.554166&lat2=9.45&lng2=128.99999"
@@ -613,6 +614,8 @@ async def get_heatmap_in_a_day(db: Database, date: str, timeFrom: Optional[str] 
         detection_results.c.numberOfContainer,
     ).where(detection_results.c.date == date)
     
+    print(f"Fetching heatmap for date: {date}, timeFrom: {timeFrom}, timeTo: {timeTo}")
+    
     if timeFrom and timeTo:
         query = query.where(
             and_(
@@ -624,9 +627,6 @@ async def get_heatmap_in_a_day(db: Database, date: str, timeFrom: Optional[str] 
     rows = await db.fetch_all(query)
     if not rows:
         return None
-
-    # Group by hour and camera
-    from collections import defaultdict
 
     # {hour: {cameraId: {...}}}
     hour_camera_dict = defaultdict(lambda: defaultdict(lambda: {
@@ -692,8 +692,8 @@ async def get_heatmap_in_a_day(db: Database, date: str, timeFrom: Optional[str] 
 
     result = {
         "date": date,
-        "timeFrom": "00:00:00",
-        "timeTo": "23:59:59",
+        "timeFrom": timeFrom or "00:00:00",
+        "timeTo": timeTo or "23:59:59",
         **total,
         "details": details
     }
