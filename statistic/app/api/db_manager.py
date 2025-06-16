@@ -614,7 +614,7 @@ async def get_heatmap_in_a_day(db: Database, date: str, timeFrom: Optional[str] 
         detection_results.c.numberOfContainer,
     ).where(detection_results.c.date == date)
     
-    print(f"Fetching heatmap for date: {date}, timeFrom: {timeFrom}, timeTo: {timeTo}")
+    # print(f"Fetching heatmap for date: {date}, timeFrom: {timeFrom}, timeTo: {timeTo}")
     
     if timeFrom and timeTo:
         query = query.where(
