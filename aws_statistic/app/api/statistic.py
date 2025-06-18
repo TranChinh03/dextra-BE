@@ -14,8 +14,8 @@ import os
 
 statistic = APIRouter()
 
-# CAMERA_SERVICE_URL = "http://localhost:8002"
-CAMERA_SERVICE_URL = "http://nginx:8080"
+CAMERA_SERVICE_URL = "http://localhost:8002"
+# CAMERA_SERVICE_URL = "http://nginx:8080"
 
 @statistic.get("/timestamp", response_model=List[DetectionTime])
 async def get_timestamp(db: Database = Depends(get_db)) -> List[DetectionTime]:

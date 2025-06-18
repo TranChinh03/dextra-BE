@@ -229,6 +229,8 @@ async def get_custom_detection_results(db: Database, date: str, timeFrom: str, t
         details_dict[key]["numberOfContainer"] += row["numberofcontainer"]
 
     details = list(details_dict.values())
+    # Sort details by date, then by time
+    details.sort(key=lambda x: (x['date'], x['time']))
 
     result = {
         "date": date,
@@ -330,6 +332,8 @@ async def get_custom_detection_results_by_district(
         details_dict[key]["numberOfContainer"] += row["numberofcontainer"]
 
     details = list(details_dict.values())
+    # Sort details by date, then by time
+    details.sort(key=lambda x: (x['date'], x['time']))
 
     result = {
         "district": district,
@@ -421,6 +425,8 @@ async def get_custom_detection_results_by_camera(
             details_dict[key]["numberOfContainer"] += row["numberofcontainer"]
 
     details = list(details_dict.values())
+    # Sort details by date
+    details.sort(key=lambda x: x['date'])
 
     result = {
         "camera": camera,
