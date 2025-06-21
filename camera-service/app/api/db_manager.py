@@ -79,7 +79,7 @@ async def write_all_cameras_to_db(db: Database) -> str:
             'angle': camera['angle'],
             'liveviewUrl': f"http://giaothong.hochiminhcity.gov.vn/render/ImageHandler.ashx?id={camera['_id']}",
             'isEnabled': True,
-            'lastmodified': datetime.utcnow()
+            'lastModified': datetime.utcnow()
         }
         stmt = insert(cameras).values(new_camera_data)
         try: 
@@ -135,7 +135,7 @@ async def create_demo_camera(db: Database, camera: CreateCamera) -> Camera:
         'angle': camera.angle,
         'liveviewUrl': camera.liveviewUrl,
         'isEnabled': camera.isEnabled,  
-        'lastmodified': datetime.utcnow()
+        'lastModified': datetime.utcnow()
     }
     insert_query = demoCameras.insert().values(
             new_camera_data
@@ -184,7 +184,7 @@ async def update_camera_statuses(db: Database, camera_ids: List[str], is_enabled
                     'angle': camera.angle,
                     'liveviewUrl': 'http://giaothong.hochiminhcity.gov.vn/render/ImageHandler.ashx?id={camera.camera_id}',
                     'isEnabled': False,
-                    'lastmodified':  datetime.utcnow()
+                    'lastModified':  datetime.utcnow()
                 }
                 stmt = insert(cameras).values(new_camera_data)
                 try:
@@ -337,8 +337,8 @@ async def unfollow_camera_service(db: Database, cameraId: str, userId: str):
 
         # Convert datetime fields to string if they exist
         camera_details = dict(camera_detail_query)
-        if isinstance(camera_details.get('lastmodified'), datetime):
-            camera_details['lastmodified'] = camera_details['lastmodified'].strftime(
+        if isinstance(camera_details.get('lastModified'), datetime):
+            camera_details['lastModified'] = camera_details['lastModified'].strftime(
                 '%Y-%m-%d %H:%M:%S'
             )
 

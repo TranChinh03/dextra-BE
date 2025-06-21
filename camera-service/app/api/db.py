@@ -23,7 +23,7 @@ cameras = Table(
     Column('ptz', Boolean),
     Column('liveviewUrl', String(250)),
     Column('isEnabled', Boolean, default=False),
-    Column('lastmodified', DateTime, default=datetime.utcnow())
+    Column('lastModified', DateTime, default=datetime.utcnow())
 )
 
 demoCameras = Table(
@@ -39,7 +39,7 @@ demoCameras = Table(
     Column('ptz', Boolean),
     Column('liveviewUrl', String(250)),
     Column('isEnabled', Boolean, default=False),
-    Column('lastmodified', DateTime, default=datetime.utcnow())
+    Column('lastModified', DateTime, default=datetime.utcnow())
 )
 
 follow_camera = Table(
