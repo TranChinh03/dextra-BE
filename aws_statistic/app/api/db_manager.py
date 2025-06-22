@@ -10,6 +10,7 @@ from collections import defaultdict
 from sqlalchemy import text
 from typing import List, Tuple
 from datetime import datetime, date, time, timedelta
+from uuid import uuid4
 
 CAMERA_API_URL = "https://api.notis.vn/v4/cameras/bybbox?lat1=11.160767&lng1=106.554166&lat2=9.45&lng2=128.99999"
 
@@ -168,6 +169,15 @@ def convert_str_to_time(time_str: str) -> time:
         return datetime.strptime(time_str, "%H:%M:%S").time()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM:SS.")
+
+def convert_str_to_date(date_str: str) -> date:
+    """
+    Chuyển đổi chuỗi ngày định dạng 'YYYY-MM-DD' thành đối tượng date.
+    """
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
 async def get_custom_detection_results(db: Database, date: str, timeFrom: str, timeTo: str) -> Optional[Dict]:
     """
@@ -866,3 +876,76 @@ async def get_heatmap_in_a_day(
         "details": details
     }
     return result
+
+def serialize_row(row):
+    return {
+        "scheduleId": row["scheduleId"] or "",
+        "userId": row["userId"] or "",
+        "email": row["email"] or "",
+        "status": row["status"] or "",
+        "dateFrom": str(row["dateFrom"]) if row["dateFrom"] is not None else "",
+        "dateTo": str(row["dateTo"]) if row["dateTo"] is not None else "",
+        "createdAt": row["createdAt"].isoformat() if row["createdAt"] is not None else "",
+    }
+
+async def get_scheduled_info(db: Database, email: Optional[str]) -> List[Dict]:
+    if email is not None:
+        query = text("""
+            SELECT *
+            FROM schedule_info
+            WHERE "email" = :email
+            ORDER BY "createdAt" DESC
+        """).bindparams(email=email)
+    else:
+        query = text("""
+            SELECT *
+            FROM schedule_info
+            ORDER BY "createdAt" DESC
+        """)
+    
+    rows = await db.fetch_all(query)
+    return [serialize_row(r) for r in rows]
+
+async def add_new_schedule(db: Database, email: str, dateFrom: str, dateTo: str, scheduleId: Optional[str] = None) -> None:
+    """
+    Add schedule to schedule_info.
+    """
+    convertedDateFrom = convert_str_to_date(dateFrom)
+    convertedDateTo = convert_str_to_date(dateTo)
+    scheduleId = scheduleId or str(uuid4())  # Generate a new UUID if not provided
+    createdAt = datetime.now()
+    
+    query = text(f"""
+        INSERT INTO schedule_info ("scheduleId", "email", "dateFrom", "dateTo", "status", "createdAt")
+        VALUES (:scheduleId, :email, :dateFrom, :dateTo, 'scheduled', :createdAt)
+    """).bindparams(
+        email=email,
+        dateFrom=convertedDateFrom,
+        dateTo=convertedDateTo,
+        scheduleId=scheduleId,
+        createdAt=createdAt
+    )
+
+    try:
+        await db.execute(query)
+    except IntegrityError as e:
+        raise HTTPException(status_code=400, detail="Schedule already exists or invalid data.")
+    
+    
+async def update_schedule_status(db: Database, scheduleId: str, status: str):
+    """
+    Update the status of a schedule.
+    """
+    if status not in ["scheduled", "cancelled", "sent"]:
+        raise HTTPException(status_code=400, detail="Invalid status value.")
+
+    query = text("""
+        UPDATE schedule_info
+        SET status = :status
+        WHERE "scheduleId" = :scheduleId
+    """).bindparams(scheduleId=scheduleId, status=status)
+
+    try:
+        await db.execute(query)
+    except IntegrityError as e:
+        raise HTTPException(status_code=400, detail="Failed to update schedule status.")

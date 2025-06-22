@@ -158,3 +158,11 @@ class HeatmapDetail(BaseModel):
     numberOfBus: int = 0
     numberOfFireTruck: int = 0
     numberOfContainer: int = 0
+    
+class scheduleInfo(BaseModel):
+    scheduleId: str
+    email: str
+    dateFrom: str
+    dateTo: str
+    createdAt: str = Field(default_factory=lambda: datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
+    status: str = "scheduled"
